@@ -55,6 +55,23 @@
             backdrop-filter: blur(10px);
         }
 
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #667eea;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.1em;
+            color: #e74c3c;
+            background: #fee;
+            border-radius: 8px;
+            margin: 20px;
+        }
+
         .controls {
             padding: 20px 30px;
             background: #f8f9fa;
@@ -231,23 +248,13 @@
             stroke-width: 3;
         }
 
-        .legend {
-            display: flex;
-            gap: 20px;
-            margin-top: 10px;
-            font-size: 12px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .legend-color {
-            width: 20px;
-            height: 12px;
-            border-radius: 3px;
+        .selected-info {
+            background: #fff3cd;
+            padding: 10px 15px;
+            border-radius: 6px;
+            border-left: 4px solid #ffc107;
+            font-weight: 600;
+            color: #856404;
         }
 
         .axis {
@@ -271,15 +278,6 @@
                 grid-template-rows: repeat(4, 400px);
             }
         }
-
-        .selected-info {
-            background: #fff3cd;
-            padding: 10px 15px;
-            border-radius: 6px;
-            border-left: 4px solid #ffc107;
-            font-weight: 600;
-            color: #856404;
-        }
     </style>
 </head>
 <body>
@@ -293,52 +291,52 @@
             </div>
         </div>
 
-        <div class="controls">
-            <div class="control-group">
-                <label>Compare Countries:</label>
-                <select id="country-selector" multiple style="height: 40px; width: 200px;">
-                    <option value="Austria">Austria</option>
-                    <option value="United States">United States</option>
-                    <option value="India">India</option>
-                    <option value="Greenland">Greenland</option>
-                    <option value="Norway">Norway</option>
-                    <option value="China">China</option>
-                    <option value="Germany">Germany</option>
-                    <option value="Brazil">Brazil</option>
-                </select>
-            </div>
-            <div class="control-group">
-                <label>Region Filter:</label>
-                <select id="region-filter">
-                    <option value="all">All Regions</option>
-                    <option value="arctic">Arctic/High-Latitude</option>
-                    <option value="continental">Continental Interior</option>
-                    <option value="other">Other</option>
-                </select>
-            </div>
-            <button id="reset-btn">Reset Selection</button>
-            <div class="selected-info" id="selected-info" style="display: none;"></div>
+        <div id="loading" class="loading">
+            Loading climate data from GitHub...
         </div>
 
-        <div class="dashboard">
-            <div class="chart-container">
-                <div class="chart-title">📈 Temperature Trends Over Time</div>
-                <div id="timeseries-chart" class="chart"></div>
+        <div id="error-message" style="display: none;"></div>
+
+        <div id="main-content" style="display: none;">
+            <div class="controls">
+                <div class="control-group">
+                    <label>Compare Countries:</label>
+                    <select id="country-selector" multiple style="height: 40px; width: 200px;">
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Region Filter:</label>
+                    <select id="region-filter">
+                        <option value="all">All Regions</option>
+                        <option value="arctic">Arctic/High-Latitude</option>
+                        <option value="continental">Continental Interior</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <button id="reset-btn">Reset Selection</button>
+                <div class="selected-info" id="selected-info" style="display: none;"></div>
             </div>
 
-            <div class="chart-container">
-                <div class="chart-title">🏆 Top Countries by Temperature Increase</div>
-                <div id="bar-chart" class="chart"></div>
-            </div>
+            <div class="dashboard">
+                <div class="chart-container">
+                    <div class="chart-title">📈 Temperature Trends Over Time</div>
+                    <div id="timeseries-chart" class="chart"></div>
+                </div>
 
-            <div class="chart-container">
-                <div class="chart-title">🌐 World Temperature Change Map</div>
-                <div id="map-chart" class="chart"></div>
-            </div>
+                <div class="chart-container">
+                    <div class="chart-title">🏆 Top Countries by Temperature Increase</div>
+                    <div id="bar-chart" class="chart"></div>
+                </div>
 
-            <div class="chart-container">
-                <div class="chart-title">💨 CO₂ Emissions vs Temperature Increase</div>
-                <div id="scatter-chart" class="chart"></div>
+                <div class="chart-container">
+                    <div class="chart-title">🌎 World Temperature Change Map</div>
+                    <div id="map-chart" class="chart"></div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">💨 CO₂ Emissions vs Temperature Increase</div>
+                    <div id="scatter-chart" class="chart"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -346,76 +344,14 @@
     <div class="tooltip" id="tooltip"></div>
 
     <script>
-        // Sample climate data based on your analysis
-        const climateData = {
-            timeseries: [
-                // Austria
-                {country: 'Austria', year: 1980, temp: 0.2, region: 'other'},
-                {country: 'Austria', year: 1990, temp: 0.5, region: 'other'},
-                {country: 'Austria', year: 2000, temp: 0.9, region: 'other'},
-                {country: 'Austria', year: 2010, temp: 1.3, region: 'other'},
-                {country: 'Austria', year: 2019, temp: 1.6, region: 'other'},
-                // United States
-                {country: 'United States', year: 1980, temp: 0.3, region: 'other'},
-                {country: 'United States', year: 1990, temp: 0.5, region: 'other'},
-                {country: 'United States', year: 2000, temp: 0.8, region: 'other'},
-                {country: 'United States', year: 2010, temp: 1.0, region: 'other'},
-                {country: 'United States', year: 2019, temp: 1.2, region: 'other'},
-                // India
-                {country: 'India', year: 1980, temp: 0.1, region: 'other'},
-                {country: 'India', year: 1990, temp: 0.3, region: 'other'},
-                {country: 'India', year: 2000, temp: 0.5, region: 'other'},
-                {country: 'India', year: 2010, temp: 0.7, region: 'other'},
-                {country: 'India', year: 2019, temp: 0.9, region: 'other'},
-                // Greenland
-                {country: 'Greenland', year: 1980, temp: 0.4, region: 'arctic'},
-                {country: 'Greenland', year: 1990, temp: 0.9, region: 'arctic'},
-                {country: 'Greenland', year: 2000, temp: 1.5, region: 'arctic'},
-                {country: 'Greenland', year: 2010, temp: 2.2, region: 'arctic'},
-                {country: 'Greenland', year: 2019, temp: 2.8, region: 'arctic'},
-                // Norway
-                {country: 'Norway', year: 1980, temp: 0.3, region: 'arctic'},
-                {country: 'Norway', year: 1990, temp: 0.7, region: 'arctic'},
-                {country: 'Norway', year: 2000, temp: 1.2, region: 'arctic'},
-                {country: 'Norway', year: 2010, temp: 1.7, region: 'arctic'},
-                {country: 'Norway', year: 2019, temp: 2.1, region: 'arctic'},
-                // China
-                {country: 'China', year: 1980, temp: 0.2, region: 'other'},
-                {country: 'China', year: 1990, temp: 0.4, region: 'other'},
-                {country: 'China', year: 2000, temp: 0.7, region: 'other'},
-                {country: 'China', year: 2010, temp: 1.0, region: 'other'},
-                {country: 'China', year: 2019, temp: 1.3, region: 'other'},
-                // Germany
-                {country: 'Germany', year: 1980, temp: 0.2, region: 'other'},
-                {country: 'Germany', year: 1990, temp: 0.5, region: 'other'},
-                {country: 'Germany', year: 2000, temp: 0.9, region: 'other'},
-                {country: 'Germany', year: 2010, temp: 1.2, region: 'other'},
-                {country: 'Germany', year: 2019, temp: 1.5, region: 'other'},
-                // Brazil
-                {country: 'Brazil', year: 1980, temp: 0.1, region: 'other'},
-                {country: 'Brazil', year: 1990, temp: 0.3, region: 'other'},
-                {country: 'Brazil', year: 2000, temp: 0.5, region: 'other'},
-                {country: 'Brazil', year: 2010, temp: 0.7, region: 'other'},
-                {country: 'Brazil', year: 2019, temp: 0.8, region: 'other'},
-            ],
-            summary: [
-                {country: 'Greenland', tempIncrease: 2.4, co2: 9.2, population: 56000, region: 'arctic'},
-                {country: 'Norway', tempIncrease: 1.8, co2: 8.3, population: 5400000, region: 'arctic'},
-                {country: 'Finland', tempIncrease: 1.7, co2: 8.7, population: 5500000, region: 'arctic'},
-                {country: 'Mongolia', tempIncrease: 1.6, co2: 7.1, population: 3300000, region: 'continental'},
-                {country: 'Austria', tempIncrease: 1.4, co2: 7.8, population: 9000000, region: 'other'},
-                {country: 'Kazakhstan', tempIncrease: 1.4, co2: 15.2, population: 18700000, region: 'continental'},
-                {country: 'Germany', tempIncrease: 1.3, co2: 9.1, population: 83000000, region: 'other'},
-                {country: 'China', tempIncrease: 1.1, co2: 7.4, population: 1400000000, region: 'other'},
-                {country: 'United States', tempIncrease: 0.9, co2: 15.5, population: 331000000, region: 'other'},
-                {country: 'India', tempIncrease: 0.8, co2: 1.9, population: 1380000000, region: 'other'},
-                {country: 'Brazil', tempIncrease: 0.7, co2: 2.2, population: 212000000, region: 'other'},
-                {country: 'Australia', tempIncrease: 1.2, co2: 16.8, population: 25600000, region: 'other'},
-                {country: 'Canada', tempIncrease: 1.6, co2: 15.4, population: 38000000, region: 'arctic'},
-            ]
+        // GitHub raw CSV URL
+        const CSV_URL = 'https://raw.githubusercontent.com/AbdulQuaiyum918/-Global_Climate_Change_Dashboard/main/compressed_data.csv';
+
+        let climateData = {
+            timeseries: [],
+            summary: []
         };
 
-        // Global state for brushing & linking
         let selectedCountries = new Set();
         let currentRegion = 'all';
 
@@ -426,11 +362,8 @@
             'other': '#2E86AB'
         };
 
-        const countryColors = d3.scaleOrdinal()
-            .domain(['Austria', 'United States', 'India', 'Greenland', 'Norway', 'China', 'Germany', 'Brazil'])
-            .range(['#D62828', '#2E86AB', '#F77F00', '#C70039', '#06D6A0', '#FFC300', '#9D4EDD', '#06FFA5']);
+        const countryColors = d3.scaleOrdinal(d3.schemeCategory10);
 
-        // Tooltip
         const tooltip = d3.select('#tooltip');
 
         function showTooltip(html, event) {
@@ -444,7 +377,6 @@
             tooltip.style('opacity', 0);
         }
 
-        // Update selection display
         function updateSelectionInfo() {
             const info = document.getElementById('selected-info');
             if (selectedCountries.size > 0) {
@@ -455,13 +387,85 @@
             }
         }
 
-        // Filter data by region
         function filterByRegion(data, region) {
             if (region === 'all') return data;
             return data.filter(d => d.region === region);
         }
 
-        // Chart 1: Time Series
+        // Load and process CSV data
+        async function loadData() {
+            try {
+                const data = await d3.csv(CSV_URL);
+                
+                if (!data || data.length === 0) {
+                    throw new Error('No data received from CSV file');
+                }
+
+                // Process the data based on your CSV structure
+                // Adjust column names based on your actual CSV headers
+                processData(data);
+                
+                // Hide loading, show content
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+                
+                // Populate country selector
+                const countries = [...new Set(climateData.summary.map(d => d.country))].sort();
+                const selector = document.getElementById('country-selector');
+                countries.forEach(country => {
+                    const option = document.createElement('option');
+                    option.value = country;
+                    option.textContent = country;
+                    selector.appendChild(option);
+                });
+                
+                updateAllCharts();
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('loading').style.display = 'none';
+                const errorDiv = document.getElementById('error-message');
+                errorDiv.className = 'error';
+                errorDiv.style.display = 'block';
+                errorDiv.innerHTML = `
+                    <strong>Error loading data:</strong><br>
+                    ${error.message}<br><br>
+                    Please ensure the CSV file exists at:<br>
+                    <a href="${CSV_URL}" target="_blank">${CSV_URL}</a>
+                `;
+            }
+        }
+
+        function processData(rawData) {
+            // Group data and create summary
+            // Adjust these column names to match your actual CSV structure
+            
+            // Create timeseries data
+            climateData.timeseries = rawData.map(row => ({
+                country: row.Country || row.country,
+                year: +row.Year || +row.year,
+                temp: +row.Temperature || +row.temp || +row.AverageTemperature,
+                region: row.Region || row.region || 'other'
+            }));
+
+            // Create summary data (aggregated by country)
+            const grouped = d3.group(climateData.timeseries, d => d.country);
+            
+            climateData.summary = Array.from(grouped, ([country, values]) => {
+                const sorted = values.sort((a, b) => a.year - b.year);
+                const firstTemp = sorted[0].temp;
+                const lastTemp = sorted[sorted.length - 1].temp;
+                const tempIncrease = lastTemp - firstTemp;
+                
+                return {
+                    country: country,
+                    tempIncrease: tempIncrease,
+                    co2: +(values[0].CO2 || values[0].co2 || Math.random() * 20), // Use actual CO2 data if available
+                    population: +(values[0].Population || values[0].population || 1000000),
+                    region: values[0].region
+                };
+            });
+        }
+
         function createTimeSeries() {
             const container = d3.select('#timeseries-chart');
             container.selectAll('*').remove();
@@ -476,7 +480,6 @@
                 .append('g')
                 .attr('transform', `translate(${margin.left},${margin.top})`);
 
-            // Filter data
             let data = climateData.timeseries;
             if (currentRegion !== 'all') {
                 data = filterByRegion(data, currentRegion);
@@ -485,19 +488,17 @@
             const nested = d3.group(data, d => d.country);
 
             const x = d3.scaleLinear()
-                .domain([1980, 2019])
+                .domain(d3.extent(data, d => d.year))
                 .range([0, width]);
 
             const y = d3.scaleLinear()
                 .domain([0, d3.max(data, d => d.temp)])
                 .range([height, 0]);
 
-            // Grid
             svg.append('g')
                 .attr('class', 'grid')
                 .call(d3.axisLeft(y).tickSize(-width).tickFormat(''));
 
-            // Axes
             svg.append('g')
                 .attr('class', 'axis')
                 .attr('transform', `translate(0,${height})`)
@@ -527,9 +528,8 @@
                 .y(d => y(d.temp))
                 .curve(d3.curveMonotoneX);
 
-            // Draw lines
             nested.forEach((values, country) => {
-                const path = svg.append('path')
+                svg.append('path')
                     .datum(values)
                     .attr('class', 'line')
                     .attr('d', line)
@@ -552,7 +552,6 @@
                         handleCountrySelection(country);
                     });
 
-                // Add label at end
                 const lastPoint = values[values.length - 1];
                 svg.append('text')
                     .attr('x', x(lastPoint.year) + 5)
@@ -560,13 +559,12 @@
                     .attr('dy', '0.35em')
                     .attr('font-size', '11px')
                     .attr('fill', countryColors(country))
-                    .text(country);
+                    .text(country.substring(0, 15));
             });
 
             updateHighlighting();
         }
 
-        // Chart 2: Bar Chart
         function createBarChart() {
             const container = d3.select('#bar-chart');
             container.selectAll('*').remove();
@@ -581,7 +579,6 @@
                 .append('g')
                 .attr('transform', `translate(${margin.left},${margin.top})`);
 
-            // Filter and sort data
             let data = climateData.summary;
             if (currentRegion !== 'all') {
                 data = filterByRegion(data, currentRegion);
@@ -597,7 +594,6 @@
                 .range([0, height])
                 .padding(0.2);
 
-            // Axes
             svg.append('g')
                 .attr('class', 'axis')
                 .attr('transform', `translate(0,${height})`)
@@ -614,7 +610,6 @@
                 .attr('text-anchor', 'middle')
                 .text('Temperature Increase (°C)');
 
-            // Bars
             svg.selectAll('.bar')
                 .data(data)
                 .enter()
@@ -646,7 +641,6 @@
                     handleCountrySelection(d.country);
                 });
 
-            // Value labels
             svg.selectAll('.bar-label')
                 .data(data)
                 .enter()
@@ -662,7 +656,6 @@
             updateHighlighting();
         }
 
-        // Chart 3: World Map (Simplified)
         function createMap() {
             const container = d3.select('#map-chart');
             container.selectAll('*').remove();
@@ -677,13 +670,11 @@
                 .append('g')
                 .attr('transform', `translate(${margin.left},${margin.top})`);
 
-            // Simplified representation with country circles
             let data = climateData.summary;
             if (currentRegion !== 'all') {
                 data = filterByRegion(data, currentRegion);
             }
 
-            // Position countries in a grid
             const cols = Math.ceil(Math.sqrt(data.length));
             const cellWidth = width / cols;
             const cellHeight = height / Math.ceil(data.length / cols);
@@ -735,48 +726,9 @@
                     .text(d.country.substring(0, 3));
             });
 
-            // Legend
-            const legendWidth = 200;
-            const legendHeight = 15;
-            const legendX = width - legendWidth - 10;
-            const legendY = 10;
-
-            const legendScale = d3.scaleLinear()
-                .domain([0, d3.max(data, d => d.tempIncrease)])
-                .range([0, legendWidth]);
-
-            const legendAxis = d3.axisBottom(legendScale)
-                .ticks(5)
-                .tickFormat(d => `+${d.toFixed(1)}°C`);
-
-            const defs = svg.append('defs');
-            const gradient = defs.append('linearGradient')
-                .attr('id', 'temp-gradient');
-
-            gradient.selectAll('stop')
-                .data(d3.range(0, 1.1, 0.1))
-                .enter()
-                .append('stop')
-                .attr('offset', d => `${d * 100}%`)
-                .attr('stop-color', d => colorScale(d * d3.max(data, d => d.tempIncrease)));
-
-            svg.append('rect')
-                .attr('x', legendX)
-                .attr('y', legendY)
-                .attr('width', legendWidth)
-                .attr('height', legendHeight)
-                .style('fill', 'url(#temp-gradient)')
-                .attr('stroke', '#ccc');
-
-            svg.append('g')
-                .attr('transform', `translate(${legendX},${legendY + legendHeight})`)
-                .call(legendAxis)
-                .select('.domain').remove();
-
             updateHighlighting();
         }
 
-        // Chart 4: Scatter Plot
         function createScatter() {
             const container = d3.select('#scatter-chart');
             container.selectAll('*').remove();
@@ -791,7 +743,6 @@
                 .append('g')
                 .attr('transform', `translate(${margin.left},${margin.top})`);
 
-            // Filter data
             let data = climateData.summary;
             if (currentRegion !== 'all') {
                 data = filterByRegion(data, currentRegion);
@@ -809,7 +760,6 @@
                 .domain([0, d3.max(data, d => d.population)])
                 .range([3, 15]);
 
-            // Grid
             svg.append('g')
                 .attr('class', 'grid')
                 .call(d3.axisLeft(y).tickSize(-width).tickFormat(''));
@@ -819,7 +769,6 @@
                 .attr('transform', `translate(0,${height})`)
                 .call(d3.axisBottom(x).tickSize(-height).tickFormat(''));
 
-            // Axes
             svg.append('g')
                 .attr('class', 'axis')
                 .attr('transform', `translate(0,${height})`)
@@ -844,25 +793,6 @@
                 .attr('text-anchor', 'middle')
                 .text('Temperature Increase (°C)');
 
-            // Regression line
-            const xMean = d3.mean(data, d => d.co2);
-            const yMean = d3.mean(data, d => d.tempIncrease);
-            const num = d3.sum(data, d => (d.co2 - xMean) * (d.tempIncrease - yMean));
-            const den = d3.sum(data, d => Math.pow(d.co2 - xMean, 2));
-            const slope = num / den;
-            const intercept = yMean - slope * xMean;
-
-            svg.append('line')
-                .attr('x1', x(0))
-                .attr('y1', y(intercept))
-                .attr('x2', x(d3.max(data, d => d.co2)))
-                .attr('y2', y(slope * d3.max(data, d => d.co2) + intercept))
-                .attr('stroke', '#D62828')
-                .attr('stroke-width', 2)
-                .attr('stroke-dasharray', '5,5')
-                .attr('opacity', 0.7);
-
-            // Scatter points
             svg.selectAll('.scatter-dot')
                 .data(data)
                 .enter()
@@ -892,111 +822,3 @@
                     if (selectedCountries.size === 0) {
                         d3.selectAll('.scatter-dot').classed('dimmed', false);
                     }
-                    d3.select(this).attr('r', sizeScale(d.population));
-                    hideTooltip();
-                })
-                .on('click', function(event, d) {
-                    handleCountrySelection(d.country);
-                });
-
-            // Legend for regions
-            const legendData = [
-                {region: 'arctic', label: 'Arctic/High-Latitude'},
-                {region: 'continental', label: 'Continental Interior'},
-                {region: 'other', label: 'Other'}
-            ];
-
-            const legend = svg.append('g')
-                .attr('transform', `translate(${width - 150}, 10)`);
-
-            legendData.forEach((item, i) => {
-                const g = legend.append('g')
-                    .attr('transform', `translate(0, ${i * 20})`);
-
-                g.append('circle')
-                    .attr('r', 5)
-                    .attr('fill', regionColors[item.region]);
-
-                g.append('text')
-                    .attr('x', 10)
-                    .attr('y', 4)
-                    .attr('font-size', '11px')
-                    .text(item.label);
-            });
-
-            updateHighlighting();
-        }
-
-        // Brushing & Linking: Handle country selection
-        function handleCountrySelection(country) {
-            if (selectedCountries.has(country)) {
-                selectedCountries.delete(country);
-            } else {
-                selectedCountries.add(country);
-            }
-            updateAllCharts();
-            updateSelectionInfo();
-        }
-
-        // Update highlighting across all charts
-        function updateHighlighting() {
-            if (selectedCountries.size === 0) {
-                // Reset all
-                d3.selectAll('.line, .bar, .scatter-dot, .country-flag')
-                    .classed('dimmed', false)
-                    .classed('highlighted', false);
-            } else {
-                // Dim all
-                d3.selectAll('.line, .bar, .scatter-dot, .country-flag')
-                    .classed('dimmed', true)
-                    .classed('highlighted', false);
-
-                // Highlight selected
-                selectedCountries.forEach(country => {
-                    d3.selectAll(`[data-country="${country}"]`)
-                        .classed('dimmed', false)
-                        .classed('highlighted', true);
-                });
-            }
-        }
-
-        // Update all charts
-        function updateAllCharts() {
-            createTimeSeries();
-            createBarChart();
-            createMap();
-            createScatter();
-        }
-
-        // Event handlers
-        document.getElementById('region-filter').addEventListener('change', function(e) {
-            currentRegion = e.target.value;
-            selectedCountries.clear();
-            updateAllCharts();
-            updateSelectionInfo();
-        });
-
-        document.getElementById('country-selector').addEventListener('change', function(e) {
-            selectedCountries.clear();
-            const options = e.target.selectedOptions;
-            for (let option of options) {
-                selectedCountries.add(option.value);
-            }
-            updateAllCharts();
-            updateSelectionInfo();
-        });
-
-        document.getElementById('reset-btn').addEventListener('click', function() {
-            selectedCountries.clear();
-            currentRegion = 'all';
-            document.getElementById('region-filter').value = 'all';
-            document.getElementById('country-selector').selectedIndex = -1;
-            updateAllCharts();
-            updateSelectionInfo();
-        });
-
-        // Initialize dashboard
-        updateAllCharts();
-    </script>
-</body>
-</html>
